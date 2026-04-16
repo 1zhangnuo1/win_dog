@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>桌面小狗机器人</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../node_modules/three/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- 心情指示器 -->
+  <div id="mood-indicator" class="mood-indicator">
+    <span class="mood-emoji">😊</span>
+  </div>
+
+  <!-- 文件拖放问号指示器 -->
+  <div id="drop-indicator" class="drop-indicator hidden">
+    <span class="drop-question">❓</span>
+  </div>
+
+  <!-- 回复气泡 -->
+  <div id="response-bubble" class="bubble response-bubble hidden">
+    <div class="bubble-tail top"></div>
+    <div class="bubble-text" id="response-text"></div>
+  </div>
+
+  <!-- 思考气泡 -->
+  <div id="thinking-bubble" class="bubble thinking-bubble hidden">
+    <div class="bubble-tail top"></div>
+    <div class="thinking-dots">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+  </div>
+
+  <!-- 3D渲染区域 -->
+  <canvas id="dog-canvas"></canvas>
+
+  <!-- 历史对话面板 -->
+  <div id="history-panel" class="history-panel hidden">
+    <div class="history-header">
+      <span>历史对话</span>
+      <button id="btn-close-history" class="btn-close-panel">✕</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+  <!-- 输入气泡 -->
+  <div id="input-bubble" class="bubble input-bubble hidden">
+    <div class="bubble-tail bottom"></div>
+    <div class="input-area">
+      <textarea id="chat-input" placeholder="和小狗说点什么..." rows="2"></textarea>
+      <div class="input-actions">
+        <button id="btn-image" class="btn-icon" title="粘贴图片分析">🖼</button>
+        <button id="btn-send" class="btn-icon" title="发送">➤</button>
+      </div>
+    </div>
+    <div id="image-preview" class="image-preview hidden">
+      <img id="preview-img" src="" alt="preview">
+      <button id="btn-remove-image" class="btn-remove">✕</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
