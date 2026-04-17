@@ -183,21 +183,48 @@ function isDogHit(x, y) {
   return ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
 }
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-  mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+// ===== 鼠标注视 + 穿透检测 =====
+const isLinux = window.electronAPI.platform === 'linux';
 
-  // 检查是否在UI元素上（气泡、指示器等）
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  if (el && el !== document.body && el !== document.documentElement && el !== canvas) {
-    window.electronAPI.setIgnoreMouseEvents(false);
-    return;
-  }
+if (isLinux) {
+  // Linux: forward:true 不生效，通过主进程轮询 + IPC 实现穿透检测
+  window.electronAPI.onLinuxMouseMove(({ x, y }) => {
+    mouseX = (x / window.innerWidth) * 2 - 1;
+    mouseY = -(y / window.innerHeight) * 2 + 1;
 
-  // 检查是否在小狗区域
-  const hit = isDogHit(e.clientX, e.clientY);
-  window.electronAPI.setIgnoreMouseEvents(!hit);
-});
+    const el = document.elementFromPoint(x, y);
+    if (el && el !== document.body && el !== document.documentElement && el !== canvas) {
+      window.electronAPI.sendHitResult(true);
+      return;
+    }
+
+    const hit = isDogHit(x, y);
+    window.electronAPI.sendHitResult(hit);
+  });
+
+  // 非穿透状态下的常规 mousemove（更平滑的眼睛跟踪）
+  document.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+  });
+} else {
+  // Windows/macOS: forward: true 正常工作
+  document.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    // 检查是否在UI元素上（气泡、指示器等）
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (el && el !== document.body && el !== document.documentElement && el !== canvas) {
+      window.electronAPI.setIgnoreMouseEvents(false);
+      return;
+    }
+
+    // 检查是否在小狗区域
+    const hit = isDogHit(e.clientX, e.clientY);
+    window.electronAPI.setIgnoreMouseEvents(!hit);
+  });
+}
 
 // ===== 点击小狗 =====
 canvas.addEventListener('dog-click', () => {

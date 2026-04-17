@@ -40,4 +40,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 右键菜单
   showContextMenu: () => ipcRenderer.send('show-context-menu'),
   onMenuAction: (callback) => ipcRenderer.on('menu-action', (_, action) => callback(action)),
+
+  // 平台信息 & Linux 鼠标穿透支持
+  platform: process.platform,
+  onLinuxMouseMove: (callback) => {
+    ipcRenderer.on('linux-mouse-move', (_, pos) => callback(pos));
+  },
+  sendHitResult: (hit) => {
+    ipcRenderer.send('linux-hit-result', hit);
+  },
 });

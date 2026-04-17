@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen } = require('electron');
+const isLinux = process.platform === 'linux';
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
@@ -29,11 +30,45 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
-  mainWindow.setIgnoreMouseEvents(true, { forward: true });
 
-  // 鼠标穿透：渲染进程通知是否穿透
+  if (isLinux) {
+    // Linux: forward:true 不生效，使用主进程轮询光标位置 + IPC 穿透检测
+    mainWindow.setIgnoreMouseEvents(true, { forward: false });
+
+    const mousePollInterval = setInterval(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        clearInterval(mousePollInterval);
+        return;
+      }
+      try {
+        const cursorPos = screen.getCursorScreenPoint();
+        const bounds = mainWindow.getBounds();
+        const relX = cursorPos.x - bounds.x;
+        const relY = cursorPos.y - bounds.y;
+
+        if (relX >= 0 && relX <= bounds.width && relY >= 0 && relY <= bounds.height) {
+          mainWindow.webContents.send('linux-mouse-move', { x: relX, y: relY });
+        } else {
+          mainWindow.setIgnoreMouseEvents(true, { forward: false });
+        }
+      } catch (_) {}
+    }, 50);
+
+    ipcMain.on('linux-hit-result', (_, hit) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.setIgnoreMouseEvents(!hit, { forward: false });
+      }
+    });
+  } else {
+    // Windows/macOS: forward: true 正常工作
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+  }
+
+  // 鼠标穿透：渲染进程通知是否穿透（Windows/macOS 使用）
   ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
-    mainWindow.setIgnoreMouseEvents(ignore, { forward: true });
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setIgnoreMouseEvents(ignore, { forward: !isLinux });
+    }
   });
 
   // 右键菜单
